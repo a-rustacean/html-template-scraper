@@ -39,6 +39,6 @@ jobs:
           cp target/x86_64-pc-windows-msvc/release/"$project_name".exe artifacts/"$project_name"-windows-msvc.exe
 
       - name: Save artifacts
-        uses: actions/upload-artifacts@v2
+        uses: actions/upload-artifact@v2
         with:
           path: artifactes
