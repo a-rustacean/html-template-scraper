@@ -9,6 +9,15 @@ template data from the web, empowering people and organisations to improve their
 
 > **Note:** Unauthorized scraping of paid content may violate terms of service or copyright laws.
 
+
+## Key Features
+
+- Scrapes paid HTML templates from various sources
+- Provides free access to high-quality templates
+- Easy installation and usage
+- Customizable scraping behavior
+
+
 ## Installation
 
 To install the html template scraper, follow, these steps:
@@ -34,7 +43,7 @@ scrap-html {TEMPLATE URL} {OUTPUT FOLDER}
 
 The scraper will start fetching HTML templates from various sources and make them available for free download. You can customize the scraping behavior by modifying the code according to your requirements.
 
-## Uninstallation
+## Uninstall
 
 To uninstall the web scraper, follow these steps:
 
