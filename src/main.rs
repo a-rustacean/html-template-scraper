@@ -3,7 +3,7 @@ use std::{
     process::exit,
 };
 
-use html_template_scrapper::scrap_html;
+use html_template_scraper::scrap_html;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
