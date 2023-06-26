@@ -18,7 +18,7 @@ jobs:
         with:
           toolchain: stable
       
-      - name: Compile to all targets
+      - name: Compile
         run: |
           cargo build --release
           mkdir artifacts
@@ -28,4 +28,4 @@ jobs:
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
-          path: artifactes
+          path: artifacts
