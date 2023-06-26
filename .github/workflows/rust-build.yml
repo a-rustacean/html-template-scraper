@@ -22,7 +22,7 @@ jobs:
         run: |
           # Set the project name
           project_name="html-template-scraper"
-          cargo build --release --target
+          cargo build --release
           mkdir artifacts
 
           cp target/release/"$project_name" artifacts/"$project_name"-linux
