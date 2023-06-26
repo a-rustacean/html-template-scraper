@@ -17,10 +17,22 @@ template data from the web, empowering people and organisations to improve their
 - Easy installation and usage
 - Customizable scraping behavior
 
-
 ## Installation
 
-To install the html template scraper, follow, these steps:
+You have two options to install the HTML Template Scraper:
+
+### 1. Downloading from GitHub Actions Artifacts
+
+If you prefer a pre-built version of the SVG Icon Extractor, you can download it from the GitHub Actions artifacts. Follow these steps:
+
+1. Go to the [Actions](../../actions) tab in the repository.
+2. Select the latest successful workflow run.
+3. In the workflow run details, navigate to the "Artifacts" section.
+4. Download the artifact containin .
+
+### 2. Building from Source
+
+If you want to build the HTML Template Scraper from source, follow these steps:
 
 1. Make sure your have rust installed on your machine.
 2. Clone this repository to your local machine.
