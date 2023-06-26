@@ -24,6 +24,7 @@ jobs:
           mkdir artifacts
 
           cp target/release/html-template-scraper artifacts/html-template-scraper-linux
+          ls target/release/
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
