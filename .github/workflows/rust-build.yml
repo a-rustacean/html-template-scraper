@@ -20,12 +20,10 @@ jobs:
       
       - name: Compile to all targets
         run: |
-          # Set the project name
-          project_name="html-template-scraper"
           cargo build --release
           mkdir artifacts
 
-          cp target/release/"$project_name" artifacts/"$project_name"-linux
+          cp target/release/html-template-scraper artifacts/html-template-scraper-linux
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
