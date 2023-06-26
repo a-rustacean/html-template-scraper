@@ -52,7 +52,7 @@ This will set up the neccessary dependencies and configurations for the scraper.
 Once the installation is complete, you can run the html scraper with the following command.
 
 ```shell
-scrap-html {TEMPLATE URL} {OUTPUT FOLDER}
+scrap-html <TEMPLATE URL> <OUTPUT FOLDER>
 ```
 
 The scraper will start fetching HTML templates from various sources and make them available for free download. You can customize the scraping behavior by modifying the code according to your requirements.
