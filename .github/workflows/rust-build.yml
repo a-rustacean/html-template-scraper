@@ -17,14 +17,28 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      
+      - name: config cargo for darwin
+        run: |
+          cat << EOF >> $HOME/.cargo/config
+          [target.x86_64-apple-darwin]
+          rustflags = [
+            "-C", "link-arg=-undefined",
+            "-C", "link-arg=dynamic_lookup",
+          ]
+        
+          [target.aarch64-apple-darwin]
+          rustflags = [
+            "-C", "link-arg=-undefined",
+            "-C", "link-arg=dynamic_lookup",
+          ]
+          EOF
 
       - name: Compile to all targets
         run: |
           # Set the project name
           project_name="html-template-scraper"
 
-          
-          
           # Add all the supported targets
           rustup target add x86_64-unknown-linux-gnu
           rustup target add x86_64-apple-darwin
@@ -33,21 +47,6 @@ jobs:
 
           # Build for all supported targets
           cargo build --release --target x86_64-unknown-linux-gnu
-          
-          cat << EOF >> ~/.cargo/config
-[target.x86_64-apple-darwin]
-rustflags = [
-  "-C", "link-arg=-undefined",
-  "-C", "link-arg=dynamic_lookup",
-]
-
-[target.aarch64-apple-darwin]
-rustflags = [
-  "-C", "link-arg=-undefined",
-  "-C", "link-arg=dynamic_lookup",
-]
-EOF
-
           cargo build --release --target x86_64-apple-darwin
           cargo build --release --target x86_64-pc-windows-gnu
           cargo build --release --target x86_64-pc-windows-msvc
