@@ -30,7 +30,7 @@ If you prefer a pre-built version of the SVG Icon Extractor, you can download it
 1. Go to the [Actions](../../actions) tab in the repository.
 2. Select the latest successful workflow run.
 3. In the workflow run details, navigate to the "Artifacts" section.
-4. Download the artifact containin .
+4. Download the artifact.
 
 ### 2. Building from Source
 
