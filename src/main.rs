@@ -22,8 +22,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     create_dir(format!("{}/img", output_dir))?;
     create_dir(format!("{}/font", output_dir))?;
 
-    for link in scraped_html.links {
-        write(format!("{}/css/{}", output_dir, link.name), link.content)?;
+    for stylesheet in scraped_html.stylesheets {
+        write(
+            format!("{}/css/{}", output_dir, stylesheet.name),
+            stylesheet.content,
+        )?;
     }
 
     for script in scraped_html.scripts {
@@ -40,5 +43,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for font in scraped_html.fonts {
         write(format!("{}/font/{}", output_dir, font.name), font.content)?;
     }
+
+    if let Some(icon) = scraped_html.icon {
+        write(format!("{}/{}", output_dir, icon.name), icon.content)?;
+    }
+
+    if let Some(shortcut_icon) = scraped_html.shortcut_icon {
+        write(
+            format!("{}/{}", output_dir, shortcut_icon.name),
+            shortcut_icon.content,
+        )?;
+    }
+
     Ok(())
 }
