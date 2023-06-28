@@ -53,7 +53,12 @@ pub struct ScrapedCss {
 }
 
 async fn fetch_file_raw<T: IntoUrl>(url: T) -> AnyResult<Vec<u8>> {
-    Ok(reqwest::get(url.into_url()?).await?.error_for_status()?.bytes().await?.to_vec())
+    Ok(reqwest::get(url.into_url()?)
+        .await?
+        .error_for_status()?
+        .bytes()
+        .await?
+        .to_vec())
 }
 
 pub async fn scrap_css<T: IntoUrl>(base: T) -> AnyResult<ScrapedCss> {
