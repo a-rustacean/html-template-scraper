@@ -1,3 +1,4 @@
+use futures::future::{BoxFuture, FutureExt};
 use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::IntoUrl;
@@ -18,20 +19,20 @@ const FONT_EXTENSIONS: [&str; 4] = ["ttf", "eot", "woff", "woff2"];
 type AnyError = Box<dyn std::error::Error>;
 type AnyResult<T> = Result<T, AnyError>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ScrapedFile {
     pub name: String,
     pub content: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ScrapedFileRaw {
     pub name: String,
     pub content: Vec<u8>,
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ScrapedHtml {
     pub content: String,
     pub icon: Option<ScrapedFileRaw>,
@@ -44,12 +45,12 @@ pub struct ScrapedHtml {
     pub anchors: Vec<(String, String)>,
 }
 
-#[allow(dead_code)]
+#[derive(Debug, Clone)]
 pub struct ScrapedCss {
+    pub name: String,
     pub content: String,
     pub fonts: Vec<ScrapedFileRaw>,
-    // (Absolute url, file name)
-    pub imports: Vec<(String, String)>,
+    pub imported_stylesheets: Vec<ScrapedCss>,
 }
 
 async fn fetch_file_raw<T: IntoUrl>(url: T) -> AnyResult<Vec<u8>> {
@@ -61,75 +62,104 @@ async fn fetch_file_raw<T: IntoUrl>(url: T) -> AnyResult<Vec<u8>> {
         .to_vec())
 }
 
-pub async fn scrap_css<T: IntoUrl>(base: T) -> AnyResult<ScrapedCss> {
-    let base = base.into_url().unwrap();
-    let mut css = reqwest::get(base.clone()).await?.text().await?;
-    let mut fonts = Vec::new();
-    let mut imports = Vec::new();
+pub fn scraped_css_tree_to_vec(scraped_css: ScrapedCss) -> Vec<ScrapedCss> {
+    let imported_stylesheets = scraped_css.imported_stylesheets.clone();
+    let mut output = vec![scraped_css];
 
-    for font_face_capture in FONT_FACE_REGEX.captures_iter(&css.clone()) {
-        let font_face = &font_face_capture[0];
-        for src_capture in CSS_URL_REGEX.captures_iter(font_face) {
-            let src = src_capture[1].to_string();
-            let url = if (src.starts_with('"') && src.ends_with('"'))
-                || (src.starts_with('\'') && src.ends_with('\''))
-            {
-                src[1..src.len() - 1].to_string()
-            } else {
-                src
-            };
-            let normal_url = url.split('?').next().unwrap().split('#').next().unwrap();
-            let path = match base.join(normal_url) {
-                Ok(v) => v,
-                Err(_) => continue,
-            };
-            let path_str = path.to_string();
-            let file_name = match path_str.split('/').last() {
-                Some(v) => v,
-                None => continue,
-            };
-            println!("Font: {}", path_str);
-            let file_content = reqwest::get(path).await?.bytes().await?;
-            css = css.replace(&url, &format!("../font/{}", file_name));
-            fonts.push(ScrapedFileRaw {
-                name: file_name.to_string(),
-                content: file_content.to_vec(),
-            });
+    for imported_stylesheet in imported_stylesheets {
+        output.extend(scraped_css_tree_to_vec(imported_stylesheet));
+    }
+
+    output
+}
+
+pub fn scrap_css<T: IntoUrl + std::marker::Send + 'static>(
+    base: T,
+    depth: usize,
+) -> BoxFuture<'static, Option<ScrapedCss>> {
+    async move {
+        let base = base.into_url().ok()?;
+        let mut css = reqwest::get(base.clone()).await.ok()?.text().await.ok()?;
+        let base_str = base.to_string();
+        println!("Css: {}", base);
+        let file_name = base_str.split('/').last()?;
+        let mut fonts = Vec::new();
+        let mut imported_stylesheets = Vec::new();
+
+        for font_face_capture in FONT_FACE_REGEX.captures_iter(&css.clone()) {
+            let font_face = &font_face_capture[0];
+            for src_capture in CSS_URL_REGEX.captures_iter(font_face) {
+                let src = src_capture[1].to_string();
+                let url = if (src.starts_with('"') && src.ends_with('"'))
+                    || (src.starts_with('\'') && src.ends_with('\''))
+                {
+                    src[1..src.len() - 1].to_string()
+                } else {
+                    src
+                };
+                let normal_url = url.split('?').next().unwrap().split('#').next().unwrap();
+                let path = match base.join(normal_url) {
+                    Ok(v) => v,
+                    Err(_) => continue,
+                };
+                let path_str = path.to_string();
+                let file_name = match path_str.split('/').last() {
+                    Some(v) => v,
+                    None => continue,
+                };
+                println!("Font: {}", path_str);
+                let file_content = reqwest::get(path).await.ok()?.bytes().await.ok()?;
+                css = css.replace(&url, &format!("../font/{}", file_name));
+                fonts.push(ScrapedFileRaw {
+                    name: file_name.to_string(),
+                    content: file_content.to_vec(),
+                });
+            }
         }
-    }
 
-    for css_import_capture in CSS_IMPORT_REGEX.captures_iter(&css.clone()) {
-        let css_url = css_import_capture
-            .get(1)
-            .or_else(|| css_import_capture.get(2))
-            .or_else(|| css_import_capture.get(3))
-            .unwrap()
-            .as_str();
-        let absolute_url = match base.join(css_url) {
-            Ok(v) => v,
-            Err(_) => continue,
-        };
-        let absolute_url_str = absolute_url.to_string();
-        let file_name = match absolute_url_str.split('/').last() {
-            Some(v) => v,
-            None => continue,
-        };
-        css = css.replace(&css_import_capture[0], file_name);
-        imports.push((absolute_url.to_string(), file_name.to_string()));
-    }
+        if depth > 0 {
+            for css_import_capture in CSS_IMPORT_REGEX.captures_iter(&css.clone()) {
+                let css_url = css_import_capture
+                    .get(1)
+                    .or_else(|| css_import_capture.get(2))
+                    .or_else(|| css_import_capture.get(3))
+                    .unwrap()
+                    .as_str();
+                let absolute_url = match base.join(css_url) {
+                    Ok(v) => v,
+                    Err(_) => continue,
+                };
+                let absolute_url_str = absolute_url.to_string();
+                let file_name = match absolute_url_str.split('/').last() {
+                    Some(v) => v,
+                    None => continue,
+                };
+                if absolute_url.host_str() == base.host_str() && absolute_url.path() != base.path() {
+                    let scraped_css = match scrap_css(absolute_url, depth - 1).await {
+                        Some(v) => v,
+                        None => continue,
+                    };
+                    css = css.replace(&css_import_capture[0], file_name);
+                    imported_stylesheets.push(scraped_css);
+                }
+            }
+        }
 
-    Ok(ScrapedCss {
-        content: css,
-        fonts,
-        imports,
-    })
+        Some(ScrapedCss {
+            name: file_name.to_string(),
+            content: css,
+            fonts,
+            imported_stylesheets,
+        })
+    }
+    .boxed()
 }
 
 pub fn extension<T: AsRef<str>>(name: T) -> Option<String> {
     name.as_ref().split('.').last().map(|str| str.into())
 }
 
-pub async fn scrap_html<T: IntoUrl>(file_url: T) -> AnyResult<ScrapedHtml> {
+pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<ScrapedHtml> {
     let base = file_url.into_url()?;
     let mut html_file = reqwest::get(base.clone()).await?.text().await?;
     println!("Html: {}", base.clone());
@@ -190,11 +220,11 @@ pub async fn scrap_html<T: IntoUrl>(file_url: T) -> AnyResult<ScrapedHtml> {
     let shortcut_icon = async {
         if let Some(icon) = document.select(&shortcut_icon_selector).next() {
             if let Some(href) = icon.value().attr("href") {
-                if let Ok(href) = base.join(href) {
-                    if let Some(file_name) = href.to_string().split('/').last() {
-                        if let Ok(content) = fetch_file_raw(href.clone()).await {
+                if let Ok(absolute_url) = base.join(href) {
+                    if let Some(file_name) = absolute_url.to_string().split('/').last() {
+                        if let Ok(content) = fetch_file_raw(absolute_url.clone()).await {
                             html_file = html_file.replace(&href.to_string(), file_name);
-                            println!("Shortcut Icon: {}", href);
+                            println!("Shortcut Icon: {}", absolute_url);
                             return Some(ScrapedFileRaw {
                                 name: file_name.to_string(),
                                 content,
@@ -222,17 +252,20 @@ pub async fn scrap_html<T: IntoUrl>(file_url: T) -> AnyResult<ScrapedHtml> {
                 };
                 if absolute_attr.host_str() == base.host_str() {
                     println!("Link: {}", absolute_attr_str);
-                    let scraped_css = scrap_css(absolute_attr).await;
-                    if let Ok(scraped_css) = scraped_css {
-                        scraped_css
-                            .fonts
-                            .into_iter()
-                            .for_each(|font| fonts.push(font));
-                        html_file = html_file.replace(attr, &format!("css/{}", file_name));
-                        stylesheets.push(ScrapedFile {
-                            name: file_name.to_string(),
-                            content: scraped_css.content,
-                        });
+                    let scraped_css = scrap_css(absolute_attr, depth).await;
+                    if let Some(scraped_css) = scraped_css {
+                        let scraped_stylesheets = scraped_css_tree_to_vec(scraped_css);
+                        for stylesheet in scraped_stylesheets {
+                            stylesheet
+                                .fonts
+                                .into_iter()
+                                .for_each(|font| fonts.push(font));
+                            html_file = html_file.replace(attr, &format!("css/{}", file_name));
+                            stylesheets.push(ScrapedFile {
+                                name: stylesheet.name,
+                                content: stylesheet.content,
+                            });
+                        }
                     }
                 }
             }

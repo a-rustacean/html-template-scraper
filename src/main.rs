@@ -33,7 +33,7 @@ async fn main() {
     let template_url = args[1].clone();
     let output_dir = args.get(2).unwrap_or(&String::from("output")).clone();
     create_dir(&output_dir);
-    let scraped_html = match scrap_html(template_url).await {
+    let scraped_html = match scrap_html(template_url, args.get(3).and_then(|str| str.parse().ok()).unwrap_or(5)).await {
         Ok(v) => v,
         Err(err) => {
             eprintln!("Unable to fetch template: {}", err);
