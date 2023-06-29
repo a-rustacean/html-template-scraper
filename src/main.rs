@@ -47,10 +47,19 @@ async fn main() {
         }
     };
     write(format!("{}/index.html", output_dir), scraped_html.content);
-    create_dir(format!("{}/css", output_dir));
-    create_dir(format!("{}/src", output_dir));
-    create_dir(format!("{}/img", output_dir));
-    create_dir(format!("{}/font", output_dir));
+
+    if !scraped_html.stylesheets.is_empty() {
+        create_dir(format!("{}/css", output_dir));
+    }
+    if !scraped_html.scripts.is_empty() {
+        create_dir(format!("{}/src", output_dir));
+    }
+    if !scraped_html.images.is_empty() {
+        create_dir(format!("{}/img", output_dir));
+    }
+    if !scraped_html.fonts.is_empty() {
+        create_dir(format!("{}/font", output_dir));
+    }
 
     for stylesheet in scraped_html.stylesheets {
         write(
