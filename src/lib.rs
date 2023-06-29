@@ -79,7 +79,14 @@ pub fn scrap_css<T: IntoUrl + std::marker::Send + 'static>(
 ) -> BoxFuture<'static, Option<ScrapedCss>> {
     async move {
         let base = base.into_url().ok()?;
-        let mut css = reqwest::get(base.clone()).await.ok()?.text().await.ok()?;
+        let mut css = reqwest::get(base.clone())
+            .await
+            .ok()?
+            .error_for_status()
+            .ok()?
+            .text()
+            .await
+            .ok()?;
         let base_str = base.to_string();
         println!("Css: {}", base);
         let file_name = base_str.split('/').last()?;
@@ -134,7 +141,8 @@ pub fn scrap_css<T: IntoUrl + std::marker::Send + 'static>(
                     Some(v) => v,
                     None => continue,
                 };
-                if absolute_url.host_str() == base.host_str() && absolute_url.path() != base.path() {
+                if absolute_url.host_str() == base.host_str() && absolute_url.path() != base.path()
+                {
                     let scraped_css = match scrap_css(absolute_url, depth - 1).await {
                         Some(v) => v,
                         None => continue,
@@ -161,7 +169,11 @@ pub fn extension<T: AsRef<str>>(name: T) -> Option<String> {
 
 pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<ScrapedHtml> {
     let base = file_url.into_url()?;
-    let mut html_file = reqwest::get(base.clone()).await?.text().await?;
+    let mut html_file = reqwest::get(base.clone())
+        .await?
+        .error_for_status()?
+        .text()
+        .await?;
     println!("Html: {}", base.clone());
     let html_file_clone = html_file.clone();
     let document = Html::parse_document(&html_file_clone);
