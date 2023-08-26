@@ -1,1 +1,1 @@
-rm -rf $HOME/.local/bin/scrap-html
+rm -rf $HOME/.local/bin/scrape-html
