@@ -195,7 +195,7 @@ pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<Scra
         if let Some(icon) = document.select(&icon_selector).next() {
             if let Some(href) = icon.value().attr("href") {
                 if let Ok(href) = base.join(href) {
-                    if let Some(file_name) = href.to_string().split('/').last() {
+                    if let Some(file_name) = href.as_ref().split('/').last() {
                         if let Ok(content) = fetch_file_raw(href.clone()).await {
                             let href_string = href.to_string();
                             html_file = html_file.replace(&href_string, file_name);
@@ -233,7 +233,7 @@ pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<Scra
         if let Some(icon) = document.select(&shortcut_icon_selector).next() {
             if let Some(href) = icon.value().attr("href") {
                 if let Ok(absolute_url) = base.join(href) {
-                    if let Some(file_name) = absolute_url.to_string().split('/').last() {
+                    if let Some(file_name) = absolute_url.as_ref().split('/').last() {
                         if let Ok(content) = fetch_file_raw(absolute_url.clone()).await {
                             html_file = html_file.replace(&href.to_string(), file_name);
                             println!("Shortcut Icon: {}", absolute_url);
