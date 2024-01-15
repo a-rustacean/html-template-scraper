@@ -11,5 +11,5 @@ regex = "1.8.4"
 reqwest = "0.11.18"
 scraper = "0.18.1"
 tokio = { version = "1.29.1", features = ["rt", "macros", "rt-multi-thread"] }
-url = "2.4.0"
+url = "2.5.0"
 xmlwriter = "0.1.0"
