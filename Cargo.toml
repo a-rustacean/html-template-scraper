@@ -2,7 +2,7 @@
 name = "html-template-scraper"
 version = "0.1.0"
 edition = "2021"
-author = "Dilshad <a-rustacean@outlook.com>"
+authors = ["Dilshad <a-rustacean@outlook.com>"]
 
 [dependencies]
 futures = "0.3.28"
