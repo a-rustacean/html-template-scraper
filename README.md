@@ -1,6 +1,6 @@
 # HTML Template Scraper
 
-[![Lint and Check formating](https://github.com/a-rustacean/html-template-scraper/actions/workflows/lint.yml/badge.svg)](https://github.com/a-rustacean/html-template-scraper/actions/workflows/lint.yml)
+[![Lint and Check formatting](https://github.com/a-rustacean/html-template-scraper/actions/workflows/lint.yml/badge.svg)](https://github.com/a-rustacean/html-template-scraper/actions/workflows/lint.yml)
 
 This tool provides a convenient solution by allowing you to access and download a wide range of HTML website templates,
 including the high-quality and costly ones offered by companies like [Bootstrap](https://themes.getbootstrap.com/). These templates are known for their exceptional
