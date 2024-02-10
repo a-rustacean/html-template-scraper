@@ -21,7 +21,7 @@ template data from the web, empowering people and organisations to improve their
 
 ## Installation
 
-Follow these steps:
+Pre-built binaries for Font Icons Scraper are not currently available, you can build it from source, follow these steps:
 
 1. Make sure you have rust installed on your machine.
 2. Clone this repository to your local machine.
