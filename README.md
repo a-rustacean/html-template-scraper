@@ -1,7 +1,5 @@
 # HTML Template Scraper
 
-[![Compile](https://github.com/a-rustacean/html-template-scraper/actions/workflows/rust-build.yml/badge.svg)](https://github.com/a-rustacean/html-template-scraper/actions/workflows/rust-build.yml)
-
 This tool provides a convenient solution by allowing you to access and download a wide range of HTML website templates,
 including the high-quality and costly ones offered by companies like [Bootstrap](https://themes.getbootstrap.com/). These templates are known for their exceptional
 design and functionality. However, acquiring them usually involves a significant expense. With the assistance of web scraping
