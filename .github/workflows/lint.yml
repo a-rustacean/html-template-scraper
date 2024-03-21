@@ -1,25 +1,22 @@
-name: Lint and Check formatting
+name: Lint and Check Formatting
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: "full"
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/checkout@v4
 
       - name: Cache Rust
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -27,18 +24,16 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: linux-cargo-lint
+          key: ${{ runner.os }}-cargo-lint
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
-          override: true
           components: rustfmt, clippy
-          default: true
 
       - name: Lint
-        run: cargo +nightly clippy -r -Z unstable-options -- -D warnings
+        run: cargo +nightly clippy --all -Z unstable-options -- -D warnings
 
       - name: Check Formatting
-        run: cargo +nightly fmt --check
+        run: cargo +nightly fmt --all --check
