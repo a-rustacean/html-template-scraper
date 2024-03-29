@@ -10,6 +10,6 @@ lazy_static = "1.4.0"
 regex = "1.10.4"
 reqwest = "0.12.2"
 scraper = "0.19.0"
-tokio = { version = "1.29.1", features = ["rt", "macros", "rt-multi-thread"] }
+tokio = { version = "1.37.0", features = ["rt", "macros", "rt-multi-thread"] }
 url = "2.5.0"
 xmlwriter = "0.1.0"
