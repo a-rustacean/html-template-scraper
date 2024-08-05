@@ -9,7 +9,7 @@ futures = "0.3.30"
 lazy_static = "1.5.0"
 regex = "1.10.6"
 reqwest = "0.12.5"
-scraper = "0.19.1"
+scraper = "0.20.0"
 tokio = { version = "1.39.2", features = ["rt", "macros", "rt-multi-thread"] }
 url = "2.5.2"
 xmlwriter = "0.1.0"
