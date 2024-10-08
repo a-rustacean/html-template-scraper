@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.yml"
+      - "!.github/workflows/ci.yml"
+  push:
+    branches: "*"
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.yml"
+      - "!.github/workflows/ci.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  test:
+    name: Test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # - os: windows-latest # See `test-windows` job below
+          - os: ubuntu-latest
+          - os: macos-14
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          # warm cache factory for all other CI jobs
+          # cache `target` directory to avoid download crates
+          save-cache: ${{ github.ref_name == 'main' }}
+          cache-key: warm
+      - run: cargo test --quiet --workspace --exclude 'oxc_*'
+      - run: cargo ck
+
+  test-windows:
+    name: Test (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: samypr100/setup-dev-drive@v3
+        with:
+          workspace-copy: true
+          drive-size: 8GB
+
+      - name: Install Rust
+        working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
+        env:
+          CARGO_HOME: ${{ env.DEV_DRIVE }}/.cargo
+          RUSTUP_HOME: ${{ env.DEV_DRIVE }}/.rustup
+        shell: bash
+        run: |
+          sed -i -e 's/profile = "default"/profile = "minimal"/g' rust-toolchain.toml
+          rustup set profile minimal
+          rustup show
+          git restore .
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ env.DEV_DRIVE_WORKSPACE }}
+          save-if: ${{ github.ref_name == 'main' }}
+          shared-key: windows-latest
+        env:
+          CARGO_HOME: ${{ env.DEV_DRIVE }}/.cargo
+          RUSTUP_HOME: ${{ env.DEV_DRIVE }}/.rustup
+
+      - name: Run
+        working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
+        env:
+          CARGO_HOME: ${{ env.DEV_DRIVE }}/.cargo
+          RUSTUP_HOME: ${{ env.DEV_DRIVE }}/.rustup
+        shell: bash
+        run: |
+          cargo test --quiet --workspace --exclude 'oxc_*'
+
+  typos:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: crate-ci/typos@master
+        with:
+          files: .
+
+  unused-deps:
+    name: Check Unused Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+              - 'Cargo.lock'
+      - uses: Boshen/setup-rust@main
+        with:
+          restore-cache: false
+        if: steps.filter.outputs.src == 'true'
+      - uses: cargo-bins/cargo-binstall@main
+        if: steps.filter.outputs.src == 'true'
+      - run: cargo binstall --no-confirm cargo-shear
+        if: steps.filter.outputs.src == 'true'
+      - run: cargo shear
+        if: steps.filter.outputs.src == 'true'
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          components: rustfmt
+          restore-cache: false
+      - run: cargo fmt --all -- --check
+
+  lint:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          cache-key: warm
+          components: clippy
+      - run: cargo lint -- -D warnings
+
+  doc:
+    name: Doc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          cache-key: warm
+          components: rust-docs
+      - run: RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --document-private-items

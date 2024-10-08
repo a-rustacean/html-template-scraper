@@ -54,12 +54,7 @@ pub struct ScrapedCss {
 }
 
 async fn fetch_file_raw<T: IntoUrl>(url: T) -> AnyResult<Vec<u8>> {
-    Ok(reqwest::get(url.into_url()?)
-        .await?
-        .error_for_status()?
-        .bytes()
-        .await?
-        .to_vec())
+    Ok(reqwest::get(url.into_url()?).await?.error_for_status()?.bytes().await?.to_vec())
 }
 
 pub fn scraped_css_tree_to_vec(scraped_css: ScrapedCss) -> Vec<ScrapedCss> {
@@ -79,14 +74,8 @@ pub fn scrap_css<T: IntoUrl + std::marker::Send + 'static>(
 ) -> BoxFuture<'static, Option<ScrapedCss>> {
     async move {
         let base = base.into_url().ok()?;
-        let mut css = reqwest::get(base.clone())
-            .await
-            .ok()?
-            .error_for_status()
-            .ok()?
-            .text()
-            .await
-            .ok()?;
+        let mut css =
+            reqwest::get(base.clone()).await.ok()?.error_for_status().ok()?.text().await.ok()?;
         let base_str = base.to_string();
         println!("Css: {}", base);
         let file_name = base_str.split('/').last()?;
@@ -153,12 +142,7 @@ pub fn scrap_css<T: IntoUrl + std::marker::Send + 'static>(
             }
         }
 
-        Some(ScrapedCss {
-            name: file_name.to_string(),
-            content: css,
-            fonts,
-            imported_stylesheets,
-        })
+        Some(ScrapedCss { name: file_name.to_string(), content: css, fonts, imported_stylesheets })
     }
     .boxed()
 }
@@ -169,11 +153,7 @@ pub fn extension<T: AsRef<str>>(name: T) -> Option<String> {
 
 pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<ScrapedHtml> {
     let base = file_url.into_url()?;
-    let mut html_file = reqwest::get(base.clone())
-        .await?
-        .error_for_status()?
-        .text()
-        .await?;
+    let mut html_file = reqwest::get(base.clone()).await?.error_for_status()?.text().await?;
     println!("Html: {}", base.clone());
     let html_file_clone = html_file.clone();
     let document = Html::parse_document(&html_file_clone);
@@ -200,29 +180,20 @@ pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<Scra
                             let href_string = href.to_string();
                             html_file = html_file.replace(&href_string, file_name);
                             println!("Icon: {}", href_string);
-                            return Some(ScrapedFileRaw {
-                                name: file_name.to_string(),
-                                content,
-                            });
+                            return Some(ScrapedFileRaw { name: file_name.to_string(), content });
                         }
                     }
                 }
             }
         } else if let Ok(content) = fetch_file_raw(base.join("favicon.ico").unwrap()).await {
             println!("Icon: {}/favicon.ico", base);
-            return Some(ScrapedFileRaw {
-                name: String::from("favicon.ico"),
-                content,
-            });
+            return Some(ScrapedFileRaw { name: String::from("favicon.ico"), content });
         } else if let Origin::Tuple(protocol, host, port) = base.origin() {
             if let Ok(content) =
                 fetch_file_raw(format!("{}://{}:{}/favicon.ico", protocol, host, port)).await
             {
                 println!("Icon: {}://{}:{}/favicon.ico", protocol, host, port);
-                return Some(ScrapedFileRaw {
-                    name: String::from("favicon.ico"),
-                    content,
-                });
+                return Some(ScrapedFileRaw { name: String::from("favicon.ico"), content });
             }
         }
         None
@@ -237,10 +208,7 @@ pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<Scra
                         if let Ok(content) = fetch_file_raw(absolute_url.clone()).await {
                             html_file = html_file.replace(&href.to_string(), file_name);
                             println!("Shortcut Icon: {}", absolute_url);
-                            return Some(ScrapedFileRaw {
-                                name: file_name.to_string(),
-                                content,
-                            });
+                            return Some(ScrapedFileRaw { name: file_name.to_string(), content });
                         }
                     }
                 }
@@ -268,10 +236,7 @@ pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<Scra
                     if let Some(scraped_css) = scraped_css {
                         let scraped_stylesheets = scraped_css_tree_to_vec(scraped_css);
                         for stylesheet in scraped_stylesheets {
-                            stylesheet
-                                .fonts
-                                .into_iter()
-                                .for_each(|font| fonts.push(font));
+                            stylesheet.fonts.into_iter().for_each(|font| fonts.push(font));
                             html_file = html_file.replace(attr, &format!("css/{}", file_name));
                             stylesheets.push(ScrapedFile {
                                 name: stylesheet.name,
@@ -308,10 +273,8 @@ pub async fn scrap_html<T: IntoUrl>(file_url: T, depth: usize) -> AnyResult<Scra
                         Err(_) => continue,
                     };
                     html_file = html_file.replace(attr, &format!("src/{}", file_name));
-                    scripts.push(ScrapedFile {
-                        name: file_name.to_string(),
-                        content: file_content,
-                    });
+                    scripts
+                        .push(ScrapedFile { name: file_name.to_string(), content: file_content });
                 }
             }
             None => continue,

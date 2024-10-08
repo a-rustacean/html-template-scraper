@@ -4,22 +4,14 @@ use html_template_scraper::scrap_html;
 
 fn write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, contents: C) {
     if let Err(err) = std::fs::write(path.as_ref(), contents) {
-        eprintln!(
-            "Error writing file \"{}\": {}",
-            path.as_ref().to_str().unwrap_or(""),
-            err
-        );
+        eprintln!("Error writing file \"{}\": {}", path.as_ref().to_str().unwrap_or(""), err);
         exit(1);
     }
 }
 
 fn create_dir<P: AsRef<Path>>(path: P) {
     if let Err(err) = std::fs::create_dir(path.as_ref()) {
-        eprintln!(
-            "Error creating directory \"{}\": {}",
-            path.as_ref().to_str().unwrap_or(""),
-            err
-        );
+        eprintln!("Error creating directory \"{}\": {}", path.as_ref().to_str().unwrap_or(""), err);
         exit(1);
     }
 }
@@ -34,18 +26,16 @@ async fn main() {
     let template_url = args[1].clone();
     let output_dir = args.get(2).unwrap_or(&String::from("output")).clone();
     create_dir(&output_dir);
-    let scraped_html = match scrap_html(
-        template_url,
-        args.get(3).and_then(|str| str.parse().ok()).unwrap_or(5),
-    )
-    .await
-    {
-        Ok(v) => v,
-        Err(err) => {
-            eprintln!("Unable to fetch template: {}", err);
-            exit(1);
-        }
-    };
+    let scraped_html =
+        match scrap_html(template_url, args.get(3).and_then(|str| str.parse().ok()).unwrap_or(5))
+            .await
+        {
+            Ok(v) => v,
+            Err(err) => {
+                eprintln!("Unable to fetch template: {}", err);
+                exit(1);
+            }
+        };
     write(format!("{}/index.html", output_dir), scraped_html.content);
 
     if !scraped_html.stylesheets.is_empty() {
@@ -62,17 +52,11 @@ async fn main() {
     }
 
     for stylesheet in scraped_html.stylesheets {
-        write(
-            format!("{}/css/{}", output_dir, stylesheet.name),
-            stylesheet.content,
-        );
+        write(format!("{}/css/{}", output_dir, stylesheet.name), stylesheet.content);
     }
 
     for script in scraped_html.scripts {
-        write(
-            format!("{}/src/{}", output_dir, script.name),
-            script.content,
-        );
+        write(format!("{}/src/{}", output_dir, script.name), script.content);
     }
 
     for image in scraped_html.images {
@@ -88,9 +72,6 @@ async fn main() {
     }
 
     if let Some(shortcut_icon) = scraped_html.shortcut_icon {
-        write(
-            format!("{}/{}", output_dir, shortcut_icon.name),
-            shortcut_icon.content,
-        );
+        write(format!("{}/{}", output_dir, shortcut_icon.name), shortcut_icon.content);
     }
 }
