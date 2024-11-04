@@ -11,4 +11,4 @@ regex = "1.11.1"
 reqwest = "0.12.9"
 scraper = "0.21.0"
 tokio = { version = "1.41.0", features = ["rt", "macros", "rt-multi-thread"] }
-url = "2.5.2"
+url = "2.5.3"
