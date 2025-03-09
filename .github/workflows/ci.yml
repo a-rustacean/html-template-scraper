@@ -48,18 +48,20 @@ jobs:
   test-windows:
     name: Test (windows-latest)
     runs-on: windows-latest
+    if: ${{ github.ref_name == 'main' }}
     steps:
-      - uses: taiki-e/checkout-action@v1
-      - uses: samypr100/setup-dev-drive@v3
+      - uses: actions/checkout@v4
+      - uses: samypr100/setup-dev-drive@b9079d2711b01ed39de859c79c96484bfd80e078 # v3.4.1
         with:
           workspace-copy: true
           drive-size: 8GB
+          drive-format: NTFS
+          env-mapping: |
+            CARGO_HOME,{{ DEV_DRIVE }}/.cargo
+            RUSTUP_HOME,{{ DEV_DRIVE }}/.rustup
 
       - name: Install Rust
         working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
-        env:
-          CARGO_HOME: ${{ env.DEV_DRIVE }}/.cargo
-          RUSTUP_HOME: ${{ env.DEV_DRIVE }}/.rustup
         shell: bash
         run: |
           sed -i -e 's/profile = "default"/profile = "minimal"/g' rust-toolchain.toml
