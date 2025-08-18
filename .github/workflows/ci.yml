@@ -50,7 +50,7 @@ jobs:
     runs-on: windows-latest
     if: ${{ github.ref_name == 'main' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: samypr100/setup-dev-drive@750bec535eb7e4833d6a4c86c5738751f9887575 # v3.4.2
         with:
           workspace-copy: true
