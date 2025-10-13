@@ -51,7 +51,7 @@ jobs:
     if: ${{ github.ref_name == 'main' }}
     steps:
       - uses: actions/checkout@v5
-      - uses: samypr100/setup-dev-drive@750bec535eb7e4833d6a4c86c5738751f9887575 # v3.4.2
+      - uses: samypr100/setup-dev-drive@cf663fdf88945e3faaa980ec525b5bc2350fbf9d # v3.4.3
         with:
           workspace-copy: true
           drive-size: 8GB
